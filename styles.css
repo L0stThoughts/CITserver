@@ -1,0 +1,25 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+h1 {
+    color: #333;
+}
+
+.post {
+    margin-bottom: 20px;
+}
+
+.post h2 {
+    color: #0056b3;
+}
+
+.post p {
+    font-size: 16px;
+}
+
+hr {
+    margin: 30px 0;
+}
+

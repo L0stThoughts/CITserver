@@ -3,35 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Blog</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Blog</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <header>
-        <h1>My Simple Blog</h1>
-    </header>
+    <h1>Blog Posts</h1>
+    
+    <!-- Placeholder for blog posts -->
+    <div id="posts-container">
+        <p>Loading posts...</p>
+    </div>
 
-    <main>
-        <section id="blog-posts">
-            <h2>Blog Posts</h2>
-            <!-- Blog posts will be inserted here dynamically -->
-            <div id="posts"></div>
-        </section>
+    <script>
+        // Fetch blog posts from the API
+        fetch('/api/posts')
+            .then(response => response.json())
+            .then(posts => {
+                const postsContainer = document.getElementById('posts-container');
+                postsContainer.innerHTML = ''; // Clear the loading message
 
-        <section id="new-post">
-            <h2>Create New Post</h2>
-            <form id="postForm">
-                <label for="title">Title:</label>
-                <input type="text" id="title" name="title" required>
-
-                <label for="content">Content:</label>
-                <textarea id="content" name="content" rows="5" required></textarea>
-
-                <button type="submit">Add Post</button>
-            </form>
-        </section>
-    </main>
-
-    <script src="scripts.js"></script>
+                // Check if there are any posts
+                if (posts.length > 0) {
+                    posts.forEach(post => {
+                        // Create a post element
+                        const postElement = document.createElement('div');
+                        postElement.classList.add('post');
+                        postElement.innerHTML = `
+                            <h2>${post.title}</h2>
+                            <p>By ${post.author} on ${new Date(post.created_at).toLocaleString()}</p>
+                            <p>${post.content}</p>
+                            <hr>
+                        `;
+                        // Append the post element to the container
+                        postsContainer.appendChild(postElement);
+                    });
+                } else {
+                    postsContainer.innerHTML = '<p>No blog posts available.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching posts:', error);
+                document.getElementById('posts-container').innerHTML = '<p>Error loading posts.</p>';
+            });
+    </script>
 </body>
 </html>
+
