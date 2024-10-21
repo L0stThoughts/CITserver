@@ -1,55 +1,65 @@
 const express = require('express');
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise'); // Using promise-based MySQL
 const path = require('path');
 
 const app = express();
 const port = 3000;
 
-// Serve static files (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname, 'public')));
+let connection; // Variable to store the database connection
 
-// MySQL connection
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'MySecureP@ssw0rd!',
-    database: 'blogdb'
-});
+// Function to connect to MySQL
+(async () => {
+    try {
+        // Establish the MySQL connection using RDS credentials
+        connection = await mysql.createConnection({
+            host: 'database-1.cj8ccskwcppm.eu-central-1.rds.amazonaws.com',
+            port: 3306,
+            user: 'root',
+            password: 'rootroot',
+            database: 'blogdb'
+        });
 
-// Test MySQL connection
-connection.connect((err) => {
-    if (err) {
+        console.log('Connected to MySQL.');
+
+        // Define API routes only after the database connection is successful
+        defineRoutes();
+
+    } catch (err) {
         console.error('Error connecting to MySQL:', err);
-        return;
+        process.exit(1); // Exit the process if connection fails
     }
-    console.log('Connected to MySQL.');
-});
+})();
 
-// API route to fetch blog posts in JSON format
-app.get('/api/posts', (req, res) => {
-    const query = `
-        SELECT posts.id, posts.title, posts.content, authors.name AS author, posts.created_at
-        FROM posts
-        JOIN authors ON posts.author_id = authors.id
-        ORDER BY posts.created_at DESC
-    `;
+// Function to define routes (called after successful DB connection)
+function defineRoutes() {
+    // Serve static files (HTML, CSS, JS)
+    app.use(express.static(path.join(__dirname, 'public')));
 
-    connection.query(query, (err, results) => {
-        if (err) {
+    // API route to fetch blog posts in JSON format
+    app.get('/api/posts', async (req, res) => {
+        try {
+            const query = `
+                SELECT posts.id, posts.title, posts.content, authors.name AS author, posts.created_at
+                FROM posts
+                JOIN authors ON posts.author_id = authors.id
+                ORDER BY posts.created_at DESC
+            `;
+            const [results] = await connection.execute(query);
+            res.json(results); // Send data as JSON to the client
+        } catch (err) {
             console.error('Error fetching posts:', err);
-            return res.status(500).send('Server Error');
+            res.status(500).send('Server Error');
         }
-        res.json(results); // Send data as JSON to the client
     });
-});
 
-// **Add this route for the root path**
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html')); // Ensure you have an index.html file in the public folder
-});
+    // Root route to serve the homepage
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname, 'index.html')); // Ensure index.html exists in public folder
+    });
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-});
+    // Start the server only after routes are defined
+    app.listen(port, () => {
+        console.log(`Server running at http://localhost:${port}`);
+    });
+}
 
