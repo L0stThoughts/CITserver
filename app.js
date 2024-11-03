@@ -66,7 +66,7 @@ const authorizeAdmin = (req, res, next) => {
 // Function to seed the admin user
 async function seedAdminUser() {
     const adminUsername = 'admin';
-    const adminPassword = 'adminpassword'; // Use a secure password
+    const adminPassword = '69CrazyAuraChad420'; // Use a secure password
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     // Check if admin exists in the database
@@ -74,7 +74,7 @@ async function seedAdminUser() {
 
     if (existingAdmin.length === 0) {
         // Create the admin user
-        await connection.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', 
+        await connection.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
             [adminUsername, hashedPassword, 'admin']);
         console.log('Admin user created');
     } else {
@@ -272,4 +272,3 @@ function defineRoutes() {
         console.log(`Server running at http://localhost:${port}`);
     });
 }
-
