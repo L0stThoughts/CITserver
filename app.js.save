@@ -8,7 +8,7 @@ const port = 3000;
 let connection; // Variable to store the database connection
 
 // Middleware to parse JSON requests
-app.use(express.json(), express.static(__dirname));
+app.use(express.json());
 
 // Function to connect to MySQL
 (async () => {
@@ -38,7 +38,7 @@ function defineRoutes() {
     // Serve static files (HTML, CSS, JS)
     app.use(express.static(path.join(__dirname, 'public')));
 
-    // API route to fetch all blog posts in JSON format
+    // API route to fetch blog posts in JSON format
     app.get('/api/posts', async (req, res) => {
         try {
             const query = `
@@ -51,34 +51,6 @@ function defineRoutes() {
             res.json(results); // Send data as JSON to the client
         } catch (err) {
             console.error('Error fetching posts:', err);
-            res.status(500).send('Server Error');
-        }
-    });
-
-    // API route to fetch a single blog post by ID
-    app.get('/api/posts/:id', async (req, res) => {
-        const { id } = req.params;
-        console.log("Fetching post with ID:", id);
-
-        try {
-            const query = `
-                SELECT posts.id, posts.title, posts.content, authors.name AS author, posts.created_at
-                FROM posts
-                JOIN authors ON posts.author_id = authors.id
-                WHERE posts.id = ?
-            `;
-            const [results] = await connection.execute(query, [id]);
-            console.log("Query results:", results);
-
-            if (results.length === 0) {
-                console.log("Post not found for ID:", id);
-                return res.status(404).json({ error: 'Post not found' });
-            }
-
-            res.json(results[0]);
-
-        } catch (err) {
-            console.error('Error fetching post by ID:', err);
             res.status(500).send('Server Error');
         }
     });
@@ -125,7 +97,6 @@ function defineRoutes() {
 
         try {
             const [result] = await connection.execute('DELETE FROM posts WHERE id = ?', [id]);
-            console.log("Delete result:", result);
 
             if (result.affectedRows === 0) {
                 return res.status(404).json({ error: 'Post not found' });
@@ -134,49 +105,6 @@ function defineRoutes() {
             res.status(204).send(); // No content
         } catch (err) {
             console.error('Error deleting post:', err);
-            res.status(500).send('Server Error');
-        }
-    });
-
-    // API route to update a blog post by ID
-    app.patch('/api/posts/:id', async (req, res) => {
-        const { id } = req.params;
-        const { title, content } = req.body;
-
-        if (!title && !content) {
-            return res.status(400).json({ error: 'At least one of title or content is required to update.' });
-        }
-
-        try {
-            // Prepare the update query
-            const updates = [];
-            const params = [];
-
-            if (title) {
-                updates.push('title = ?');
-                params.push(title);
-            }
-
-            if (content) {
-                updates.push('content = ?');
-                params.push(content);
-            }
-
-            // Include the post ID in the parameters
-            params.push(id);
-
-            // Execute the update query
-            const query = `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`;
-            const [result] = await connection.execute(query, params);
-
-            if (result.affectedRows === 0) {
-                return res.status(404).json({ error: 'Post not found' });
-            }
-
-            res.status(200).json({ message: 'Post updated successfully' });
-
-        } catch (err) {
-            console.error('Error updating post:', err);
             res.status(500).send('Server Error');
         }
     });
