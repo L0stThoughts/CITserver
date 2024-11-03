@@ -76,7 +76,42 @@ async function seedAdminUser() {
     }
 }
 
+app.get('/api/posts', async (req, res) => {
+    try {
+        const [posts] = await connection.execute('SELECT * FROM posts ORDER BY created_at DESC');
+        console.log('Fetched posts:', posts); // Log fetched posts
 
+        if (req.user) {
+            // Filter posts for authenticated user
+            const visiblePosts = await filterRestrictedPosts(req.user, posts);
+            console.log('Visible posts for user:', visiblePosts); // Log visible posts after filtering
+            return res.status(200).json(visiblePosts);
+        } else {
+            // Return all posts for unauthenticated users
+            return res.status(200).json(posts);
+        }
+    } catch (error) {
+        console.error('Error fetching posts:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+
+async function filterRestrictedPosts(user, posts) {
+    const postIds = posts.map(post => post.id);
+
+    // Fetch restricted post IDs for the given user
+    const [restrictedPosts] = await connection.execute(
+        'SELECT post_id FROM post_visibility WHERE restricted_user = ?',
+        [user.username]
+    );
+
+    const restrictedPostIds = new Set(restrictedPosts.map(r => r.post_id));
+    console.log('Restricted posts for user:', restrictedPostIds); // Log restricted post IDs
+
+    // Filter out restricted posts from the posts array
+    return posts.filter(post => !restrictedPostIds.has(post.id));
+}
 function defineRoutes() {
     app.use(express.static(path.join(__dirname)));
 
@@ -127,6 +162,60 @@ function defineRoutes() {
         }
     });
 
+    app.get('/api/posts', async (req, res) => {
+        try {
+            // Fetch posts with author username
+            const [posts] = await connection.execute(`
+                SELECT posts.*, users.username AS author
+                FROM posts
+                LEFT JOIN users ON posts.author_id = users.id
+                ORDER BY posts.created_at DESC
+            `);
+    
+            if (req.user) {
+                // Filter posts for authenticated user
+                const visiblePosts = await filterRestrictedPosts(req.user, posts);
+                return res.status(200).json(visiblePosts);
+            } else {
+                // Return all posts for unauthenticated users
+                return res.status(200).json(posts);
+            }
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    });
+    
+    app.post('/api/posts', authenticateJWT, async (req, res) => {
+        const { title, content } = req.body;
+    
+        // Make sure title and content are present
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Title and content are required.' });
+        }
+    
+        try {
+            const authorId = req.user.id; // Assuming this is the user ID of the authenticated user
+    
+            // Insert the new post with the author_id
+            const [result] = await connection.execute(
+                'INSERT INTO posts (title, content, author_id) VALUES (?, ?, ?)',
+                [title, content, authorId]
+            );
+    
+            if (result.affectedRows > 0) {
+                res.status(201).json({ message: 'Post created successfully' });
+            } else {
+                res.status(500).json({ error: 'Failed to create post' });
+            }
+        } catch (error) {
+            console.error('Error creating post:', error); // Log the error for debugging
+            res.status(500).json({ error: 'Failed to create post' });
+        }
+    });
+    
+    
+
     app.patch('/api/posts/:id', authenticateJWT, async (req, res) => {
         const { id } = req.params;
         const { title, content } = req.body;
@@ -142,7 +231,7 @@ function defineRoutes() {
                 return res.status(404).json({ error: 'Post not found' });
             }
 
-            if (postResult[0].author_id !== authorId && req.user.role !== 'admin') {
+            if (postResult[0].author !== req.user.username && req.user.role !== 'admin') {
                 return res.status(403).json({ error: 'Forbidden: You can only edit your own posts or you must be an admin.' });
             }
 
@@ -162,6 +251,7 @@ function defineRoutes() {
             params.push(id);
 
             const query = `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`;
+
             const [result] = await connection.execute(query, params);
 
             if (result.affectedRows === 0) {
@@ -175,35 +265,22 @@ function defineRoutes() {
         }
     });
 
-    app.post('/api/posts', authenticateJWT, async (req, res) => {
-        const { title, content } = req.body;
+    app.delete('/api/posts/:id', authenticateJWT, async (req, res) => {
+        const { id } = req.params;
+
         try {
-            await connection.execute('INSERT INTO posts (title, content, author) VALUES (?, ?, ?)', [title, content, req.user.username]);
-            res.status(201).json({ message: 'Post created successfully' });
+            const [postRows] = await connection.execute('SELECT * FROM posts WHERE id = ?', [id]);
+            if (postRows.length === 0) return res.status(404).json({ error: 'Post not found' });
+
+            const post = postRows[0];
+            if (post.author !== req.user.username && req.user.role !== 'admin') {
+                return res.status(403).json({ error: 'Permission denied' });
+            }
+
+            await connection.execute('DELETE FROM posts WHERE id = ?', [id]);
+            res.status(200).json({ message: 'Post deleted successfully' });
         } catch (error) {
-            console.error('Error creating post:', error);
-            res.status(500).json({ error: 'Failed to create post' });
-        }
-    });
-
-    async function filterRestrictedPosts(user, posts) {
-        const postIds = posts.map(post => post.id);
-        const [restrictedPosts] = await connection.execute(
-            'SELECT post_id FROM post_visibility WHERE restricted_user = ? AND post_id IN (?)',
-            [user.username, postIds]
-        );
-
-        const restrictedPostIds = new Set(restrictedPosts.map(r => r.post_id));
-        return posts.filter(post => !restrictedPostIds.has(post.id));
-    }
-
-    app.get('/api/posts', authenticateJWT, async (req, res) => {
-        try {
-            const [posts] = await connection.execute('SELECT * FROM posts ORDER BY created_at DESC');
-            const visiblePosts = await filterRestrictedPosts(req.user, posts);
-            res.status(200).json(visiblePosts);
-        } catch (error) {
-            console.error('Error fetching posts:', error);
+            console.error('Error deleting post:', error);
             res.status(500).json({ error: 'Server error' });
         }
     });
@@ -233,29 +310,8 @@ function defineRoutes() {
             res.status(500).json({ error: 'Server error' });
         }
     });
-
-    app.delete('/api/posts/:id', authenticateJWT, async (req, res) => {
-        const { id } = req.params;
-
-        try {
-            const [postRows] = await connection.execute('SELECT * FROM posts WHERE id = ?', [id]);
-            if (postRows.length === 0) return res.status(404).json({ error: 'Post not found' });
-
-            const post = postRows[0];
-            if (post.author !== req.user.username && req.user.role !== 'admin') {
-                return res.status(403).json({ error: 'Permission denied' });
-            }
-
-            await connection.execute('DELETE FROM posts WHERE id = ?', [id]);
-            res.status(200).json({ message: 'Post deleted successfully' });
-        } catch (error) {
-            console.error('Error deleting post:', error);
-            res.status(500).json({ error: 'Server error' });
-        }
-    });
 }
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
-

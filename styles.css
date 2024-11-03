@@ -11,17 +11,20 @@ body {
     color: #e0e0e0; /* Light grey text for contrast */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center items horizontally */
+    align-items: center;
     padding: 20px;
 }
 
 header {
     text-align: center;
     margin-bottom: 40px;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    align-items: center; /* Center align items */
 }
 
 h1 {
-    color: #ff3333; /* Deep red for title to create a striking effect */
+    color: #ff3333; /* Deep red for title */
     font-size: 3em;
     margin-bottom: 20px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Dark shadow for depth */
@@ -36,55 +39,50 @@ h2 {
 
 /* User Info Section */
 #user-info {
-    margin-bottom: 20px; /* Add some space below the user info section */
-}
-
-/* Center the elements within the user info section */
-#user-info div {
-    margin-bottom: 10px; /* Space between username and logout button */
+    margin-bottom: 20px;
 }
 
 #logout-button {
-    /* Ensure the button is centered */
-    display: inline-block; /* Make sure it behaves like a block element for margin settings */
+    margin-top: 10px; /* Add some space above the button */
 }
 
 /* Main Container */
 main {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center items */
-    width: 100%; /* Full width */
+    align-items: center;
+    width: 100%;
 }
 
 /* Form Container */
 .form-container {
     width: 80%;
-    max-width: 800px; /* Match width of blog post container */
-    background-color: #1c1c1c; /* Darker background for forms */
+    max-width: 800px;
+    background-color: #1c1c1c;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8); /* Dark shadow for depth */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8);
     margin-bottom: 20px;
 }
 
 /* Input Fields */
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+textarea {
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
-    border: 1px solid #444; /* Dark border for input fields */
+    border: 1px solid #444;
     border-radius: 5px;
     font-size: 1em;
-    background-color: #2a2a2a; /* Slightly lighter background for inputs */
-    color: #f4f4f4; /* Light text for input fields */
+    background-color: #2a2a2a;
+    color: #f4f4f4;
 }
 
 /* Buttons */
 button {
-    background-color: #333333; /* Dark grey button */
-    color: #ff3333; /* Deep red text */
+    background-color: #333333;
+    color: #ff3333;
     border: none;
     padding: 10px 20px;
     font-size: 1em;
@@ -94,39 +92,55 @@ button {
 }
 
 button:hover {
-    background-color: #ff3333; /* Change to red on hover */
-    color: #fff; /* Change text to white on hover */
+    background-color: #ff3333;
+    color: #fff;
 }
 
-/* Blog Post Style */
+/* Blog Post Styles */
 #post-list {
     width: 80%;
     max-width: 800px;
 }
 
 .post {
-    background-color: #1c1c1c; /* Dark grey background for posts */
+    background-color: #1c1c1c;
     border-radius: 8px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8); /* Darker shadow for a more eerie effect */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8);
     padding: 20px;
     margin-bottom: 20px;
-    transition: transform 0.2s; /* Add a hover effect */
+    transition: transform 0.2s;
 }
 
 .post:hover {
-    transform: translateY(-5px); /* Slight lift on hover */
+    transform: translateY(-5px);
 }
 
 .post h3 {
     font-size: 1.8em;
     color: #ffcccc; /* Softened red for post titles */
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
-.post p {
-    margin: 10px 0;
+/* Additional styling for post metadata */
+.post-metadata {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    color: #999999; /* Grey color for metadata */
+    margin-bottom: 15px;
+}
+
+.post-metadata .author {
+    font-style: italic;
+}
+
+.post-metadata .time {
+    font-style: italic;
+}
+
+.post-content {
+    color: #d0d0d0;
     line-height: 1.5;
-    color: #d0d0d0; /* Light grey for post content */
 }
 
 /* Footer Style */
