@@ -34,6 +34,21 @@ h2 {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
+/* User Info Section */
+#user-info {
+    margin-bottom: 20px; /* Add some space below the user info section */
+}
+
+/* Center the elements within the user info section */
+#user-info div {
+    margin-bottom: 10px; /* Space between username and logout button */
+}
+
+#logout-button {
+    /* Ensure the button is centered */
+    display: inline-block; /* Make sure it behaves like a block element for margin settings */
+}
+
 /* Main Container */
 main {
     display: flex;

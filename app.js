@@ -1,22 +1,19 @@
 const express = require('express');
-const mysql = require('mysql2/promise'); // Using promise-based MySQL
+const mysql = require('mysql2/promise');
+const jwt = require('jsonwebtoken');
 const path = require('path');
-const jwt = require('jsonwebtoken'); // For JWT authentication
-const bcrypt = require('bcrypt'); // For password hashing
-require('dotenv').config(); // Load environment variables from .env
+const bcrypt = require('bcrypt');
+require('dotenv').config(); // Load environment variables from .env file
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
-let connection; // Variable to store the database connection
+let connection;
 
-// Middleware to parse JSON requests
 app.use(express.json(), express.static(__dirname));
 
-// Function to connect to MySQL
 (async () => {
     try {
-        // Establish the MySQL connection using RDS credentials
         connection = await mysql.createConnection({
             host: process.env.DB_HOST,
             port: process.env.DB_PORT || 3306,
@@ -27,15 +24,13 @@ app.use(express.json(), express.static(__dirname));
 
         console.log('Connected to MySQL.');
 
-        // Seed the admin user
-        await seedAdminUser();
+        await seedAdminUser(); // Seed the admin user
 
-        // Define API routes only after the database connection is successful
-        defineRoutes();
+        defineRoutes(); // Define API routes after connection
 
     } catch (err) {
         console.error('Error connecting to MySQL:', err);
-        process.exit(1); // Exit the process if connection fails
+        process.exit(1);
     }
 })();
 
@@ -74,114 +69,64 @@ async function seedAdminUser() {
 
     if (existingAdmin.length === 0) {
         // Create the admin user
-        await connection.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
-            [adminUsername, hashedPassword, 'admin']);
+        await connection.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [adminUsername, hashedPassword, 'admin']);
         console.log('Admin user created');
     } else {
         console.log('Admin user already exists');
     }
 }
 
-// Function to define routes (called after successful DB connection)
+
 function defineRoutes() {
-    // Serve static files (HTML, CSS, JS)
-    app.use(express.static(path.join(__dirname, 'public')));
+    app.use(express.static(path.join(__dirname)));
 
-    // API route to fetch all blog posts in JSON format
-    app.get('/api/posts', async (req, res) => {
-        try {
-            const query = `
-                SELECT posts.id, posts.title, posts.content, authors.name AS author, posts.created_at
-                FROM posts
-                JOIN authors ON posts.author_id = authors.id
-                ORDER BY posts.created_at DESC
-            `;
-            const [results] = await connection.execute(query);
-            res.json(results); // Send data as JSON to the client
-        } catch (err) {
-            console.error('Error fetching posts:', err);
-            res.status(500).send('Server Error');
+    // Registration route for new users
+    app.post('/api/register', async (req, res) => {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required.' });
         }
-    });
-
-    // API route to fetch a single blog post by ID
-    app.get('/api/posts/:id', async (req, res) => {
-        const { id } = req.params;
-        console.log("Fetching post with ID:", id);
 
         try {
-            const query = `
-                SELECT posts.id, posts.title, posts.content, authors.name AS author, posts.created_at
-                FROM posts
-                JOIN authors ON posts.author_id = authors.id
-                WHERE posts.id = ?
-            `;
-            const [results] = await connection.execute(query, [id]);
-            console.log("Query results:", results);
-
-            if (results.length === 0) {
-                console.log("Post not found for ID:", id);
-                return res.status(404).json({ error: 'Post not found' });
+            const [existingUser] = await connection.execute('SELECT * FROM users WHERE username = ?', [username]);
+            if (existingUser.length > 0) {
+                return res.status(400).json({ error: 'Username already exists.' });
             }
 
-            res.json(results[0]);
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await connection.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+                [username, hashedPassword, 'user']);
+            res.status(201).json({ message: 'User registered successfully' });
 
         } catch (err) {
-            console.error('Error fetching post by ID:', err);
+            console.error('Error registering user:', err);
             res.status(500).send('Server Error');
         }
     });
 
-    // API route to create a new blog post
-    app.post('/api/posts', authenticateJWT, async (req, res) => {
-        const { title, content } = req.body;
-        const authorId = req.user.id; // Get the author's id from the token
-
-        if (!title || !content) {
-            return res.status(400).json({ error: 'Title and content are required.' });
-        }
+    app.post('/api/login', async (req, res) => {
+        const { username, password } = req.body;
 
         try {
-            // Create a new blog post
-            const [postResult] = await connection.execute(
-                'INSERT INTO posts (title, content, author_id, created_at) VALUES (?, ?, ?, NOW())',
-                [title, content, authorId]
-            );
+            const [userRows] = await connection.execute('SELECT * FROM users WHERE username = ?', [username]);
+            if (userRows.length === 0) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
 
-            // Return the ID of the newly created post
-            res.status(201).json({ id: postResult.insertId });
+            const user = userRows[0];
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
 
+            const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            res.json({ token, username: user.username });
         } catch (err) {
-            console.error('Error creating post:', err);
+            console.error('Error logging in:', err);
             res.status(500).send('Server Error');
         }
     });
 
-    // API route to delete a blog post by ID
-    app.delete('/api/posts/:id', authenticateJWT, async (req, res) => {
-        const { id } = req.params;
-        const authorId = req.user.id;
-
-        try {
-            const [postResult] = await connection.execute('SELECT * FROM posts WHERE id = ?', [id]);
-            if (postResult.length === 0) {
-                return res.status(404).json({ error: 'Post not found' });
-            }
-
-            // Admins can delete any post
-            if (postResult[0].author_id !== authorId && req.user.role !== 'admin') {
-                return res.status(403).json({ error: 'Forbidden: You can only delete your own posts or you must be an admin.' });
-            }
-
-            await connection.execute('DELETE FROM posts WHERE id = ?', [id]);
-            res.status(204).send(); // No content
-        } catch (err) {
-            console.error('Error deleting post:', err);
-            res.status(500).send('Server Error');
-        }
-    });
-
-    // API route to update a blog post by ID
     app.patch('/api/posts/:id', authenticateJWT, async (req, res) => {
         const { id } = req.params;
         const { title, content } = req.body;
@@ -197,12 +142,10 @@ function defineRoutes() {
                 return res.status(404).json({ error: 'Post not found' });
             }
 
-            // Admins can edit any post
             if (postResult[0].author_id !== authorId && req.user.role !== 'admin') {
                 return res.status(403).json({ error: 'Forbidden: You can only edit your own posts or you must be an admin.' });
             }
 
-            // Prepare the update query
             const updates = [];
             const params = [];
 
@@ -216,10 +159,8 @@ function defineRoutes() {
                 params.push(content);
             }
 
-            // Include the post ID in the parameters
             params.push(id);
 
-            // Execute the update query
             const query = `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`;
             const [result] = await connection.execute(query, params);
 
@@ -228,47 +169,93 @@ function defineRoutes() {
             }
 
             res.status(200).json({ message: 'Post updated successfully' });
-
         } catch (err) {
             console.error('Error updating post:', err);
-            res.status(500).send('Server Error');
+            res.status(500).json({ error: 'Server Error' });
         }
     });
 
-    // API route to log in a user
-    app.post('/api/login', async (req, res) => {
-        const { username, password } = req.body;
+    app.post('/api/posts', authenticateJWT, async (req, res) => {
+        const { title, content } = req.body;
+        try {
+            await connection.execute('INSERT INTO posts (title, content, author) VALUES (?, ?, ?)', [title, content, req.user.username]);
+            res.status(201).json({ message: 'Post created successfully' });
+        } catch (error) {
+            console.error('Error creating post:', error);
+            res.status(500).json({ error: 'Failed to create post' });
+        }
+    });
+
+    async function filterRestrictedPosts(user, posts) {
+        const postIds = posts.map(post => post.id);
+        const [restrictedPosts] = await connection.execute(
+            'SELECT post_id FROM post_visibility WHERE restricted_user = ? AND post_id IN (?)',
+            [user.username, postIds]
+        );
+
+        const restrictedPostIds = new Set(restrictedPosts.map(r => r.post_id));
+        return posts.filter(post => !restrictedPostIds.has(post.id));
+    }
+
+    app.get('/api/posts', authenticateJWT, async (req, res) => {
+        try {
+            const [posts] = await connection.execute('SELECT * FROM posts ORDER BY created_at DESC');
+            const visiblePosts = await filterRestrictedPosts(req.user, posts);
+            res.status(200).json(visiblePosts);
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    });
+
+    app.post('/api/posts/:id/restrict', authenticateJWT, async (req, res) => {
+        const { id } = req.params;
+        const { restrictedUser } = req.body;
 
         try {
-            const [userRows] = await connection.execute('SELECT * FROM users WHERE username = ?', [username]);
-            if (userRows.length === 0) {
-                return res.status(401).json({ error: 'Invalid credentials' });
+            const [postRows] = await connection.execute('SELECT * FROM posts WHERE id = ?', [id]);
+            if (postRows.length === 0) return res.status(404).json({ error: 'Post not found' });
+
+            const post = postRows[0];
+
+            if (post.author !== req.user.username && req.user.role !== 'admin') {
+                return res.status(403).json({ error: 'Permission denied' });
             }
 
-            const user = userRows[0];
+            await connection.execute(
+                'INSERT INTO post_visibility (post_id, restricted_user) VALUES (?, ?)',
+                [id, restrictedUser]
+            );
 
-            // Compare the password with the hash
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
-                return res.status(401).json({ error: 'Invalid credentials' });
-            }
-
-            // Create a JWT token including the user role
-            const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-            res.json({ token });
-        } catch (err) {
-            console.error('Error logging in:', err);
-            res.status(500).send('Server Error');
+            res.status(200).json({ message: 'User restricted from viewing post' });
+        } catch (error) {
+            console.error('Error managing post visibility:', error);
+            res.status(500).json({ error: 'Server error' });
         }
     });
 
-    // Root route to serve the homepage
-    app.get('/', (req, res) => {
-        res.sendFile(path.join(__dirname, 'index.html')); // Ensure index.html exists in public folder
-    });
+    app.delete('/api/posts/:id', authenticateJWT, async (req, res) => {
+        const { id } = req.params;
 
-    // Start the server only after routes are defined
-    app.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`);
+        try {
+            const [postRows] = await connection.execute('SELECT * FROM posts WHERE id = ?', [id]);
+            if (postRows.length === 0) return res.status(404).json({ error: 'Post not found' });
+
+            const post = postRows[0];
+            if (post.author !== req.user.username && req.user.role !== 'admin') {
+                return res.status(403).json({ error: 'Permission denied' });
+            }
+
+            await connection.execute('DELETE FROM posts WHERE id = ?', [id]);
+            res.status(200).json({ message: 'Post deleted successfully' });
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            res.status(500).json({ error: 'Server error' });
+        }
     });
 }
+
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
+

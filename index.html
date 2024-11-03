@@ -11,20 +11,36 @@
     <header>
         <h1>Welcome to the Blog</h1>
         <button id="logout-button" style="display: none;">Logout</button>
+        <div id="username-display" style="display: none;">
+            Welcome, <span id="current-username"></span>
+        </div>
     </header>
 
     <main>
+        <!-- Login Section -->
         <section id="login-form" class="form-container">
             <h2>Login</h2>
             <input type="text" id="username" placeholder="Username" required aria-label="Username">
             <input type="password" id="password" placeholder="Password" required aria-label="Password">
             <button id="login-button">Login</button>
+            <button id="register-button">Register</button>
             <div id="message" aria-live="polite"></div>
         </section>
 
-        <section id="post-list">
+        <!-- Blog Post Section -->
+        <section id="posts-container" style="display: none;">
             <h2>Blog Posts</h2>
-            <!-- Posts will be dynamically inserted here -->
+            <div id="post-list-container">
+                <ul id="post-list"></ul> <!-- Blog posts will be dynamically added here -->
+            </div>
+            
+            <!-- Post Creation Form -->
+            <form id="post-form" style="display: flex; flex-direction: column; margin-top: 20px;">
+                <input type="text" id="title" placeholder="Post Title" required aria-label="Post Title">
+                <textarea id="content" placeholder="Post Content" required aria-label="Post Content"></textarea>
+                <button type="submit">Create Post</button>
+            </form>
+            <div id="post-message" aria-live="polite"></div>
         </section>
     </main>
 
