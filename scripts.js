@@ -1,119 +1,145 @@
-// Function to fetch and display posts
+// Function to fetch posts
 async function fetchPosts() {
     try {
         const response = await fetch('/api/posts');
-        if (!response.ok) throw new Error('Error fetching posts');
-        
         const posts = await response.json();
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = ''; // Clear existing posts
+        const postList = document.getElementById('post-list');
+        postList.innerHTML = ''; // Clear existing posts
 
-        if (posts.length > 0) {
+        if (response.ok) {
             posts.forEach(post => {
-                const postElement = document.createElement('div');
-                postElement.classList.add('post');
-                postElement.innerHTML = `
+                const postDiv = document.createElement('div');
+                postDiv.classList.add('post');
+                postDiv.innerHTML = `
                     <h3>${post.title}</h3>
-                    <p>By ${post.author} on ${new Date(post.created_at).toLocaleString()}</p>
                     <p>${post.content}</p>
-                    <button onclick="deletePost(${post.id})">Delete Post</button>
-                    <button onclick="editPost(${post.id}, '${post.title}', '${post.content}')">Edit Post</button>
-                    <hr>
                 `;
-                postsContainer.appendChild(postElement);
+                postList.appendChild(postDiv);
             });
         } else {
-            postsContainer.innerHTML = '<p>No blog posts available.</p>';
+            postList.innerHTML = '<p>No posts available.</p>';
         }
     } catch (error) {
-        console.error(error);
-        document.getElementById('posts-container').innerHTML = '<p>Error loading posts.</p>';
+        console.error('Error fetching posts:', error);
+        document.getElementById('post-list').innerHTML = '<p>Error fetching posts.</p>';
     }
 }
 
-// Function to create a new blog post
-document.getElementById('create-post-form').addEventListener('submit', async function(event) {
-    event.preventDefault();
-    const title = document.getElementById('post-title').value;
-    const content = document.getElementById('post-content').value;
-    const author = document.getElementById('author-name').value;
-
+// Function to handle user login
+async function handleLogin(username, password) {
     try {
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, content, author })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
         });
-        if (!response.ok) throw new Error('Error creating post');
-        
+
         const data = await response.json();
-        console.log('Post created:', data);
-        displayMessage('Post created successfully!', 'success');
-        fetchPosts(); // Refresh the posts list
-        document.getElementById('create-post-form').reset(); // Clear the form
+        if (response.ok) {
+            localStorage.setItem('token', data.token); // Store token in local storage
+            document.getElementById('message').innerText = 'Login successful!';
+            document.getElementById('logout-button').style.display = 'block'; // Show logout button
+            document.getElementById('login-form').style.display = 'none'; // Hide login form
+            fetchPosts(); // Refresh posts after login
+        } else {
+            document.getElementById('message').innerText = data.error || 'Login failed.';
+        }
     } catch (error) {
-        console.error(error);
-        displayMessage('Error creating post', 'error');
+        console.error('Error logging in:', error);
+        document.getElementById('message').innerText = 'Login failed due to an error.';
     }
+}
+
+// Event listener for login button
+document.getElementById('login-button').addEventListener('click', () => {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    handleLogin(username, password);
 });
 
-// Function to delete a blog post
-async function deletePost(id) {
-    if (!confirm('Are you sure you want to delete this post?')) return;
+// Event listener for logout button
+document.getElementById('logout-button').addEventListener('click', () => {
+    localStorage.removeItem('token'); // Remove token from local storage
+    document.getElementById('logout-button').style.display = 'none'; // Hide logout button
+    document.getElementById('login-form').style.display = 'block'; // Show login form
+    document.getElementById('message').innerText = 'Logged out successfully.';
+    document.getElementById('post-list').innerHTML = ''; // Clear post list
+});
 
+// Fetch posts on initial page load
+fetchPosts();
+// Function to fetch posts
+async function fetchPosts() {
     try {
-        const response = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error('Error deleting post');
-        
-        console.log('Post deleted');
-        displayMessage('Post deleted successfully!', 'success');
-        fetchPosts(); // Refresh the posts list
+        const response = await fetch('/api/posts');
+        const posts = await response.json();
+        const postList = document.getElementById('post-list');
+        postList.innerHTML = ''; // Clear existing posts
+
+        if (response.ok) {
+            posts.forEach(post => {
+                const postDiv = document.createElement('div');
+                postDiv.classList.add('post');
+                postDiv.innerHTML = `
+                    <h3>${post.title}</h3>
+                    <p>${post.content}</p>
+                `;
+                postList.appendChild(postDiv);
+            });
+        } else {
+            postList.innerHTML = '<p>No posts available.</p>';
+        }
     } catch (error) {
-        console.error(error);
-        displayMessage('Error deleting post', 'error');
+        console.error('Error fetching posts:', error);
+        document.getElementById('post-list').innerHTML = '<p>Error fetching posts.</p>';
     }
 }
 
-// Function to edit a blog post
-function editPost(id, title, content) {
-    const newTitle = prompt('Edit Title:', title);
-    const newContent = prompt('Edit Content:', content);
-    if (newTitle !== null && newContent !== null) {
-        updatePost(id, newTitle, newContent);
-    }
-}
-
-// Function to update a blog post
-async function updatePost(id, title, content) {
+// Function to handle user login
+async function handleLogin(username, password) {
     try {
-        const response = await fetch(`/api/posts/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, content })
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
         });
-        if (!response.ok) throw new Error('Error updating post');
-        
-        displayMessage('Post updated successfully!', 'success');
-        fetchPosts(); // Refresh the posts list
+
+        const data = await response.json();
+        if (response.ok) {
+            localStorage.setItem('token', data.token); // Store token in local storage
+            document.getElementById('message').innerText = 'Login successful!';
+            document.getElementById('logout-button').style.display = 'block'; // Show logout button
+            document.getElementById('login-form').style.display = 'none'; // Hide login form
+            fetchPosts(); // Refresh posts after login
+        } else {
+            document.getElementById('message').innerText = data.error || 'Login failed.';
+        }
     } catch (error) {
-        console.error(error);
-        displayMessage('Error updating post', 'error');
+        console.error('Error logging in:', error);
+        document.getElementById('message').innerText = 'Login failed due to an error.';
     }
 }
 
-// Function to display a message to the user
-function displayMessage(message, type) {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = message;
-    messageDiv.className = type; // Add class based on message type (success or error)
+// Event listener for login button
+document.getElementById('login-button').addEventListener('click', () => {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    handleLogin(username, password);
+});
 
-    // Clear message after 3 seconds
-    setTimeout(() => {
-        messageDiv.textContent = '';
-        messageDiv.className = '';
-    }, 3000);
-}
+// Event listener for logout button
+document.getElementById('logout-button').addEventListener('click', () => {
+    localStorage.removeItem('token'); // Remove token from local storage
+    document.getElementById('logout-button').style.display = 'none'; // Hide logout button
+    document.getElementById('login-form').style.display = 'block'; // Show login form
+    document.getElementById('message').innerText = 'Logged out successfully.';
+    document.getElementById('post-list').innerHTML = ''; // Clear post list
+});
 
-// Initial fetch of posts when page loads
+// Fetch posts on initial page load
 fetchPosts();
 

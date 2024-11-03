@@ -3,107 +3,121 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Garamond', serif; /* A classic, elegant font for gothic theme */
 }
 
 body {
-    background-color: #f4f7f6;
-    color: #333;
+    background-color: #121212; /* Very dark background */
+    color: #e0e0e0; /* Light grey text for contrast */
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; /* Center items horizontally */
     padding: 20px;
 }
 
-h1 {
-    color: #333;
-    font-size: 2.5em;
-    margin-bottom: 20px;
-}
-
-h2 {
-    color: #666;
-    font-size: 1.8em;
-    margin-bottom: 10px;
-}
-
-/* Blog Post Container */
-#posts-container {
-    width: 80%;
-    max-width: 800px;
+header {
+    text-align: center;
     margin-bottom: 40px;
 }
 
-/* Individual Post Style */
-.post {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+h1 {
+    color: #ff3333; /* Deep red for title to create a striking effect */
+    font-size: 3em;
     margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Dark shadow for depth */
 }
 
-.post h3 {
-    font-size: 1.5em;
-    color: #333;
+h2 {
+    color: #ff3333; /* Deep red for subheaders */
+    font-size: 2em;
+    margin-bottom: 15px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }
 
-.post p {
-    margin: 10px 0;
-    line-height: 1.6;
-    color: #555;
+/* Main Container */
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center items */
+    width: 100%; /* Full width */
 }
 
-.post button {
-    background-color: #ff4d4d;
-    color: #fff;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: background-color 0.3s;
-    margin-top: 10px;
-}
-
-.post button:hover {
-    background-color: #cc0000;
-}
-
-/* Form Style */
-#create-post-form {
+/* Form Container */
+.form-container {
     width: 80%;
-    max-width: 800px;
-    background-color: #fff;
+    max-width: 800px; /* Match width of blog post container */
+    background-color: #1c1c1c; /* Darker background for forms */
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8); /* Dark shadow for depth */
     margin-bottom: 20px;
 }
 
-#create-post-form input[type="text"],
-#create-post-form textarea {
+/* Input Fields */
+input[type="text"],
+input[type="password"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
-    border: 1px solid #ddd;
+    border: 1px solid #444; /* Dark border for input fields */
     border-radius: 5px;
     font-size: 1em;
+    background-color: #2a2a2a; /* Slightly lighter background for inputs */
+    color: #f4f4f4; /* Light text for input fields */
 }
 
-#create-post-form button {
-    background-color: #4CAF50;
-    color: #fff;
+/* Buttons */
+button {
+    background-color: #333333; /* Dark grey button */
+    color: #ff3333; /* Deep red text */
     border: none;
     padding: 10px 20px;
     font-size: 1em;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, color 0.3s;
 }
 
-#create-post-form button:hover {
-    background-color: #45a049;
+button:hover {
+    background-color: #ff3333; /* Change to red on hover */
+    color: #fff; /* Change text to white on hover */
+}
+
+/* Blog Post Style */
+#post-list {
+    width: 80%;
+    max-width: 800px;
+}
+
+.post {
+    background-color: #1c1c1c; /* Dark grey background for posts */
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8); /* Darker shadow for a more eerie effect */
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s; /* Add a hover effect */
+}
+
+.post:hover {
+    transform: translateY(-5px); /* Slight lift on hover */
+}
+
+.post h3 {
+    font-size: 1.8em;
+    color: #ffcccc; /* Softened red for post titles */
+    margin-bottom: 10px;
+}
+
+.post p {
+    margin: 10px 0;
+    line-height: 1.5;
+    color: #d0d0d0; /* Light grey for post content */
+}
+
+/* Footer Style */
+footer {
+    text-align: center;
+    margin-top: 40px;
 }
 
 /* Responsive Adjustments */
@@ -112,16 +126,17 @@ h2 {
         padding: 10px;
     }
 
-    #posts-container, #create-post-form {
+    .form-container,
+    #post-list {
         width: 100%;
     }
 
     h1 {
-        font-size: 2em;
+        font-size: 2.5em;
     }
 
     h2 {
-        font-size: 1.5em;
+        font-size: 1.8em;
     }
 }
 

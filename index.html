@@ -5,28 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="scripts.js" defer></script>
 </head>
 <body>
-    <h1>Blog Posts</h1>
+    <header>
+        <h1>Welcome to the Blog</h1>
+        <button id="logout-button" style="display: none;">Logout</button>
+    </header>
 
-    <!-- Container for blog posts -->
-    <div id="posts-container">
-        <p>Loading posts...</p>
-    </div>
+    <main>
+        <section id="login-form" class="form-container">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Username" required aria-label="Username">
+            <input type="password" id="password" placeholder="Password" required aria-label="Password">
+            <button id="login-button">Login</button>
+            <div id="message" aria-live="polite"></div>
+        </section>
 
-    <h2>Create New Post</h2>
-    <form id="create-post-form">
-        <input type="text" id="post-title" placeholder="Post Title" required>
-        <textarea id="post-content" placeholder="Post Content" required></textarea>
-        <input type="text" id="author-name" placeholder="Author Name" required>
-        <button type="submit">Create Post</button>
-    </form>
+        <section id="post-list">
+            <h2>Blog Posts</h2>
+            <!-- Posts will be dynamically inserted here -->
+        </section>
+    </main>
 
-    <!-- Section to display any messages or errors -->
-    <div id="message"></div>
-
-    <!-- Link to external JavaScript file -->
-    <script src="scripts.js"></script>
+    <footer>
+        <p>&copy; 2024 L0stThoughts. All rights reserved.</p>
+    </footer>
 </body>
 </html>
 
