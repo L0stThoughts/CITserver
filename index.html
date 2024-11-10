@@ -16,8 +16,8 @@
         <button id="logout-button" style="display: inline;">Logout</button>
     </header>
 
-
     <main>
+        <!-- Login Form -->
         <section id="login-form" class="form-container">
             <h2>Login</h2>
             <input type="text" id="username" placeholder="Username" required aria-label="Username">
@@ -27,6 +27,7 @@
             <div id="message" aria-live="polite"></div>
         </section>
 
+        <!-- Post Creation Form -->
         <section id="post-list" style="display: none;">
             <form id="post-form">
                 <input type="text" id="title" placeholder="Post Title" required aria-label="Post Title">
@@ -40,7 +41,7 @@
                     <!-- Posts will be displayed here -->
                 </ul>
             </div>
-            
+
             <div id="post-message" aria-live="polite"></div> <!-- Display success/error messages for post creation -->
         </section>
     </main>
@@ -50,3 +51,4 @@
     </footer>
 </body>
 </html>
+

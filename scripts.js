@@ -106,11 +106,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="post-date">${new Date(post.created_at).toLocaleString()}</span>
                 </div>
                 <p>${post.content}</p>
+                <div class="post-actions">
+                    ${getUsername() === post.author || getUsername() === "admin" ? 
+                        `
+                        <button class="edit-post" data-id="${post.id}">Edit</button>
+                        <button class="delete-post" data-id="${post.id}">Delete</button>
+                        ` : ''
+                    }
+                </div>
             `;
+
+            // Add event listeners for edit and delete buttons if they exist
+            const editButton = postItem.querySelector(".edit-post");
+            const deleteButton = postItem.querySelector(".delete-post");
+
+            if (editButton) {
+                editButton.addEventListener("click", () => editPost(post));
+            }
+
+            if (deleteButton) {
+                deleteButton.addEventListener("click", () => deletePost(post.id));
+            }
+
             postListElement.appendChild(postItem);
         });
-
-        console.log("Rendered posts:", posts); // Debugging line to confirm rendering
     }
 
     // Handle login
@@ -225,6 +244,60 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("message").textContent = "Logged out successfully.";
     }
 
+    // Handle post editing
+    async function editPost(post) {
+        const title = prompt("Edit post title", post.title);
+        const content = prompt("Edit post content", post.content);
+
+        if (title && content) {
+            try {
+                const response = await fetch(`/api/posts/${post.id}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ title, content })
+                });
+
+                if (response.ok) {
+                    fetchPosts(); // Reload posts
+                    alert("Post updated successfully.");
+                } else {
+                    alert("Failed to update post.");
+                }
+            } catch (error) {
+                console.error("Error updating post:", error);
+                alert("Error updating post.");
+            }
+        }
+    }
+
+    // Handle post deletion
+    async function deletePost(postId) {
+        const confirmDelete = confirm("Are you sure you want to delete this post?");
+        if (confirmDelete) {
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${getToken()}`
+                    }
+                });
+
+                if (response.ok) {
+                    fetchPosts(); // Reload posts
+                    alert("Post deleted successfully.");
+                } else {
+                    alert("Failed to delete post.");
+                }
+            } catch (error) {
+                console.error("Error deleting post:", error);
+                alert("Error deleting post.");
+            }
+        }
+    }
+
     // Event listeners for login, registration, post creation, and logout
     loginButton.addEventListener("click", handleLogin);
     registerButton.addEventListener("click", handleRegister);
@@ -238,4 +311,3 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUIForLoggedOutUser();
     }
 });
-
