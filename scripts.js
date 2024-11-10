@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginButton = document.getElementById("login-button");
     const registerButton = document.getElementById("register-button");
     const postListElement = document.getElementById("post-list-ul");
+    const externalDataSection = document.getElementById("external-data");
 
     // Ensure these elements exist
     if (!postsContainer || !postList) {
@@ -61,7 +62,45 @@ document.addEventListener("DOMContentLoaded", () => {
         postList.style.display = "none"; // Hide post list section
         postsContainer.innerHTML = ""; // Clear posts when logged out
     }
+// Function to fetch and display external data from all four APIs
+async function fetchExternalData() {
+    try {
+        const response = await fetch("/api/datas");
 
+        if (!response.ok) {
+            throw new Error("Failed to fetch external data.");
+        }
+
+        const data = await response.json();
+
+        externalDataSection.innerHTML = `
+            <h3>Data from API 1:</h3>
+            <pre>${JSON.stringify(data.api1, null, 2)}</pre>
+            <h3>Data from API 2:</h3>
+            <pre>${JSON.stringify(data.api2, null, 2)}</pre>
+            <h3>Data from API 3:</h3>
+            <pre>${JSON.stringify(data.api3, null, 2)}</pre>
+            <h3>Data from API 4:</h3>
+            <pre>${JSON.stringify(data.api4, null, 2)}</pre>
+        `;
+    } catch (error) {
+        console.error("Error fetching external data:", error);
+        externalDataSection.innerHTML = `
+            <h3>Error:</h3>
+            <p>We encountered an issue while trying to fetch the data. Please try again later.</p>
+            <pre>${error.message}</pre>
+        `;
+    }
+}
+
+window.onload = () => {
+    fetchExternalData();
+    fetchPosts();
+};
+// Ensure the DOM is ready and then fetch the data
+document.addEventListener("DOMContentLoaded", () => {
+    fetchExternalData(); // Fetch external data when the page loads
+});
     // Fetch posts function
     async function fetchPosts() {
         try {

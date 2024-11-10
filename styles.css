@@ -169,3 +169,63 @@ footer {
     }
 }
 
+/* External Data Section Styles */
+#external-data-section {
+    width: 80%;
+    max-width: 800px;
+    background-color: #1c1c1c;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.8);
+    margin-bottom: 20px;
+}
+
+#external-data {
+    max-height: 400px; /* Set a max height to make it scrollable */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 5px;
+    background-color: #2a2a2a;
+    color: #f4f4f4;
+    font-size: 1em;
+}
+
+#external-data ul {
+    list-style-type: none; /* Remove default list bullets */
+    padding: 0;
+}
+
+#external-data li {
+    background-color: #1c1c1c;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#external-data li:hover {
+    background-color: #333;
+    cursor: pointer;
+}
+
+#external-data li p {
+    margin: 0;
+    font-size: 1.2em;
+    color: #ffcccc; /* Soft red for the text */
+}
+
+/* Scrollbar Styles */
+#external-data::-webkit-scrollbar {
+    width: 8px;
+}
+
+#external-data::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 5px;
+}
+
+#external-data::-webkit-scrollbar-track {
+    background-color: #121212;
+}
+

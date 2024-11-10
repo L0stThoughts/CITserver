@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const axios = require('axios');
 const bcrypt = require('bcrypt');
 require('dotenv').config(); // Load environment variables from .env file
 
@@ -184,7 +185,28 @@ function defineRoutes() {
     res.status(200).json(apiDocumentation);
 });
 
+app.get('/api/datas', async (req, res) => {
+    try {
+        // Fetch data from external APIs
+        const [data1, data2, data3, data4] = await Promise.all([
+            axios.get('http://3.120.141.144:8000/api/blog'),
+            axios.get('http://79.76.122.33/api/blog'),
+            axios.get('http://18.199.167.118:8080/api/blog'),
+            axios.get('http://3.75.183.140/api/blog')
+        ]);
 
+        // Send the fetched data
+        res.json({
+            api1: data1.data,
+            api2: data2.data,
+            api3: data3.data,
+            api4: data4.data
+        });
+    } catch (error) {
+        console.error('Error fetching external data:', error);  // Log the error
+        res.status(500).json({ error: 'Failed to fetch data from external APIs.' });
+    }
+});
     // Registration route for new users
     app.post('/api/register', async (req, res) => {
         const { username, password } = req.body;
