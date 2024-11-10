@@ -37,16 +37,30 @@ app.use(express.json(), express.static(__dirname));
 // Middleware to authenticate JWT
 const authenticateJWT = (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
+
     if (token) {
+        console.log('JWT Token:', token);  // Log token for debugging
+
         jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
             if (err) {
+                console.log('JWT Error:', err);  // Log the error for debugging
+                if (err.name === 'TokenExpiredError') {
+                    return res.status(401).json({ error: 'Token expired' });
+                }
                 return res.sendStatus(403); // Forbidden
             }
+
+            // Make sure user object contains necessary data (e.g., user.id)
+            if (!user || !user.id) {
+                return res.status(400).json({ error: 'Invalid token' });
+            }
+
             req.user = user;
             next();
         });
     } else {
-        res.sendStatus(401); // Unauthorized
+        console.log('No token provided');  // Log when no token is provided
+        return res.sendStatus(401); // Unauthorized
     }
 };
 
@@ -75,26 +89,6 @@ async function seedAdminUser() {
         console.log('Admin user already exists');
     }
 }
-
-app.get('/api/posts', async (req, res) => {
-    try {
-        const [posts] = await connection.execute('SELECT * FROM posts ORDER BY created_at DESC');
-        console.log('Fetched posts:', posts); // Log fetched posts
-
-        if (req.user) {
-            // Filter posts for authenticated user
-            const visiblePosts = await filterRestrictedPosts(req.user, posts);
-            console.log('Visible posts for user:', visiblePosts); // Log visible posts after filtering
-            return res.status(200).json(visiblePosts);
-        } else {
-            // Return all posts for unauthenticated users
-            return res.status(200).json(posts);
-        }
-    } catch (error) {
-        console.error('Error fetching posts:', error);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
 
 
 async function filterRestrictedPosts(user, posts) {
@@ -185,36 +179,35 @@ function defineRoutes() {
             res.status(500).json({ error: 'Server error' });
         }
     });
-    
-    app.post('/api/posts', authenticateJWT, async (req, res) => {
-        const { title, content } = req.body;
-    
-        // Make sure title and content are present
-        if (!title || !content) {
-            return res.status(400).json({ error: 'Title and content are required.' });
-        }
-    
-        try {
-            const authorId = req.user.id; // Assuming this is the user ID of the authenticated user
-    
-            // Insert the new post with the author_id
-            const [result] = await connection.execute(
-                'INSERT INTO posts (title, content, author_id) VALUES (?, ?, ?)',
-                [title, content, authorId]
-            );
-    
-            if (result.affectedRows > 0) {
-                res.status(201).json({ message: 'Post created successfully' });
-            } else {
-                res.status(500).json({ error: 'Failed to create post' });
-            }
-        } catch (error) {
-            console.error('Error creating post:', error); // Log the error for debugging
-            res.status(500).json({ error: 'Failed to create post' });
-        }
-    });
-    
-    
+
+app.post('/api/posts', authenticateJWT, async (req, res) => {
+    const { title, content } = req.body;
+    const authorId = req.user.id;  // Ensure this is valid
+    const createdAt = new Date();
+
+    if (!title || !content) {
+        return res.status(400).json({ error: 'Title and content are required.' });
+    }
+
+    try {
+        const [result] = await connection.execute(
+            'INSERT INTO posts (title, content, author_id, created_at) VALUES (?, ?, ?, ?)',
+            [title, content, authorId, createdAt]
+        );
+
+        res.status(201).json({
+            id: result.insertId,
+            title,
+            content,
+            author_id: authorId,
+            created_at: createdAt
+        });
+    } catch (err) {
+        console.error('Error creating post:', err);
+        res.status(500).json({ error: 'Server error. Could not create post.', details: err.message });
+    }
+});
+
 
     app.patch('/api/posts/:id', authenticateJWT, async (req, res) => {
         const { id } = req.params;

@@ -178,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Handle post creation
     async function handleCreatePost(event) {
         event.preventDefault();
         const title = document.getElementById("title").value;
@@ -237,3 +238,4 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUIForLoggedOutUser();
     }
 });
+

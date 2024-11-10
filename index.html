@@ -15,7 +15,7 @@
         </div>
         <button id="logout-button" style="display: inline;">Logout</button>
     </header>
-    
+
 
     <main>
         <section id="login-form" class="form-container">
@@ -28,17 +28,19 @@
         </section>
 
         <section id="post-list" style="display: none;">
+            <form id="post-form">
+                <input type="text" id="title" placeholder="Post Title" required aria-label="Post Title">
+                <textarea id="content" placeholder="Post Content" required aria-label="Post Content"></textarea>
+                <button type="submit">Create Post</button>
+            </form>
+
             <h2>Blog Posts</h2>
             <div id="posts-container">
                 <ul id="post-list-ul">
                     <!-- Posts will be displayed here -->
                 </ul>
             </div>
-            <form id="post-form">
-                <input type="text" id="title" placeholder="Post Title" required aria-label="Post Title">
-                <textarea id="content" placeholder="Post Content" required aria-label="Post Content"></textarea>
-                <button type="submit">Create Post</button>
-            </form>
+            
             <div id="post-message" aria-live="polite"></div> <!-- Display success/error messages for post creation -->
         </section>
     </main>
